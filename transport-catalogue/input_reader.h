@@ -3,6 +3,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
+#include <fstream>
 #include <algorithm>
 
 #include "geo.h"
@@ -26,6 +27,9 @@ namespace inreader {
 
     class InputReader {
     public:
+        InputReader() = default;
+        InputReader(std::istream* str) : str_(str)
+        {}
         /**
          * Парсит строку в структуру CommandDescription и сохраняет результат в commands_
          */
@@ -36,7 +40,10 @@ namespace inreader {
          */
         void ApplyCommands(transport_catalogue::processing::TransportCatalogue& catalogue);
 
+        void StartParcing(transport_catalogue::processing::TransportCatalogue& catalogue);
     private:
+        
+        std::istream* str_ = nullptr;
         std::vector<CommandDescription> commands_;
     };
 }
