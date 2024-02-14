@@ -39,7 +39,7 @@ std::vector<std::string> ParserByParameters(std::string_view string_line, char t
 void inreader::InputReader::ParseLine(std::string_view line) 
 {
     CommandDescription res;
-    if (line.find(":") != std::string::npos) // add operation
+    if (line.find(":") != std::string::npos)
     {
         if (line[0] == 'B')
         {
@@ -65,7 +65,7 @@ void inreader::InputReader::ParseLine(std::string_view line)
         }
    
     }
-    else if(line[0]=='B') // bus info
+    else if(line[0]=='B') 
     {
         res.command = "GBus";
         res.id = std::move(std::string(line.begin() + line.find_first_of(" ") + 1,
@@ -79,7 +79,6 @@ void inreader::InputReader::ParseLine(std::string_view line)
     commands_.push_back(res);
 
 }
-
 /**
  * Наполняет данными транспортный справочник, используя команды из commands_
  */
@@ -96,12 +95,12 @@ void inreader::InputReader::ApplyCommands(transport_catalogue::processing::Trans
         {
             std::vector<std::string> params = std::move(ParserByParameters(command.description, ','));
             geo_calc::Coordinates coord(std::stod(params[0]), std::stod(params[1]));
-            catalogue.AddStop(command.id, coord);
+            catalogue.AddStop(std::move(command.id), coord);
         }
         else if (command.command == "ACBus") 
         {
             std::vector<std::string> params = std::move(ParserByParameters(command.description, '>'));
-            catalogue.AddBus(command.id, std::move(params));
+            catalogue.AddBus(command.id, params);
         }
         else if (command.command == "ALBus")
         {
@@ -111,7 +110,22 @@ void inreader::InputReader::ApplyCommands(transport_catalogue::processing::Trans
             {
                 params.push_back(std::move(second_part[i]));
             }
-            catalogue.AddBus(command.id, std::move(params));
+            catalogue.AddBus(command.id, params);
         }
+    }
+}
+
+void inreader::InputReader::StartParcing(transport_catalogue::processing::TransportCatalogue& catalogue)
+{
+    int base_request_count;
+    *str_ >> base_request_count >> std::ws;
+
+    {
+        for (int i = 0; i < base_request_count; ++i) {
+            std::string line;
+            getline(*str_, line);
+            this->ParseLine(line);
+        }
+        this->ApplyCommands(catalogue);
     }
 }
