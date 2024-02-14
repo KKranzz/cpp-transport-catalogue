@@ -4,10 +4,21 @@
 #include <string_view>
 #include <unordered_set>
 #include <iomanip>
+#include <ostream>
+#include <istream>
 
 #include "transport_catalogue.h"
 
+
 namespace statreader {
-    void ParseAndPrintStat(const transport_catalogue::processing::TransportCatalogue& tansport_catalogue, std::string_view request,
-        std::ostream& output);
+
+    class StatReader {
+    public:
+        StatReader(std::ostream* os, std::istream* is) : os_(os), is_(is) {}
+        void StartRequestParcing(const transport_catalogue::processing::TransportCatalogue& tansport_catalogue);
+        void ParseAndPrintStat(const transport_catalogue::processing::TransportCatalogue& tansport_catalogue, std::string_view request);
+    private:
+        std::ostream* os_ = nullptr;
+        std::istream* is_ = nullptr;
+    };
 }
