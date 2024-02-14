@@ -1,7 +1,9 @@
 #include "stat_reader.h"
 
-void statreader::ParseAndPrintStat(const transport_catalogue::processing::TransportCatalogue& tansport_catalogue,
-	std::string_view request, std::ostream& output)
+
+
+void statreader::StatReader::ParseAndPrintStat(const transport_catalogue::processing::TransportCatalogue& tansport_catalogue,
+	std::string_view request)
 {
 	if (request[0] == 'B') {
 		std::string busname(request.begin() + request.find_first_of(" "), request.end());
@@ -10,7 +12,7 @@ void statreader::ParseAndPrintStat(const transport_catalogue::processing::Transp
 		auto bus = tansport_catalogue.FindBus(busname);
 		if (bus == nullptr)
 		{
-			output << "Bus " << busname << ": not found\n";
+			*os_ << "Bus " << busname << ": not found\n";
 			return;
 		}
 		unsigned total_stops = 0, unique_stops = 0;
@@ -26,7 +28,7 @@ void statreader::ParseAndPrintStat(const transport_catalogue::processing::Transp
 		}
 
 
-		output << "Bus " << busname << ": " << total_stops
+		*os_ << "Bus " << busname << ": " << total_stops
 			<< " stops on route, " << unique_stops << " unique stops, "
 			<< std::setprecision(6) << rlength << " route length\n";
 	}
@@ -38,21 +40,32 @@ void statreader::ParseAndPrintStat(const transport_catalogue::processing::Transp
 		auto stop = tansport_catalogue.FindStop(stopname);
 		if (stop == nullptr)
 		{
-			output << "Stop " << stopname << ": not found\n";
+			*os_ << "Stop " << stopname << ": not found\n";
 			return;
 		}
 
 		if (stop->buses_.empty())
 		{
-			output << "Stop " << stopname << ": no buses\n";
+			*os_ << "Stop " << stopname << ": no buses\n";
 			return;
 		}
 
-		output << "Stop " << stopname << ": buses";
+		*os_ << "Stop " << stopname << ": buses";
 		for (auto& busname : stop->buses_) 
 		{
-			output << " " << busname;
+			*os_ << " " << busname;
 		}
-		output << std::endl;
+		*os_ << std::endl;
+	}
+
+}
+void statreader::StatReader::StartRequestParcing(const transport_catalogue::processing::TransportCatalogue& tansport_catalogue)
+{
+	int stat_request_count;
+	*is_ >> stat_request_count >> std::ws;
+	for (int i = 0; i < stat_request_count; ++i) {
+		std::string line;
+		getline(*is_, line);
+		ParseAndPrintStat(tansport_catalogue, line);
 	}
 }
