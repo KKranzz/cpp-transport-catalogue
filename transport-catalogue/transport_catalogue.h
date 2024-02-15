@@ -32,13 +32,13 @@ namespace transport_catalogue {
 		class TransportCatalogue {
 			// Реализуйте класс самостоятельно
 		public:
-			void AddStop(std::string name, geo_calc::Coordinates coord);
+			void AddStop(std::string&& name, geo_calc::Coordinates coord);
 
-			const identity::Stop* FindStop(std::string name_stop) const;
+			const identity::Stop* FindStop(const std::string& name_stop) const;
 
-			void AddBus(std::string name, std::vector<std::string> stopnames);
+			void AddBus(const std::string& name, std::vector<std::string>& stopnames);
 
-			const identity::Bus* FindBus(std::string name_bus) const;
+			const identity::Bus* FindBus(const std::string& name_bus) const;
 
 		private:
 			std::deque<identity::Stop> stops_;
