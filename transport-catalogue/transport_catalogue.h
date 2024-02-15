@@ -14,7 +14,7 @@ namespace transport_catalogue {
 
 		struct Stop
 		{
-			Stop(std::string name, geo_calc::Coordinates coord) : name_(name), coord_(std::move(coord)) {}
+			Stop(std::string&& name, geo_calc::Coordinates coord) : name_(std::move(name)), coord_(std::move(coord)) {}
 			const std::string name_;
 			const geo_calc::Coordinates coord_;
 			std::set<std::string_view> buses_;
