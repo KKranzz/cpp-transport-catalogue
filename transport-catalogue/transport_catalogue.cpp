@@ -40,3 +40,18 @@ const {
 	return nullptr;
 }
 
+void transport_catalogue::processing::TransportCatalogue::AddDistance(std::string&& first, std::string&& second, int dist)
+{
+	dist_data_[{stopname_to_stops_[first], stopname_to_stops_[second]}] = dist;
+}
+
+ int transport_catalogue::processing::TransportCatalogue::FindDist( identity::Stop* stop1,   identity::Stop* stop2)
+ {
+	if (dist_data_.find({ stop1,stop2 })!= dist_data_.end()) 
+	{
+		return dist_data_.at({ stop1,stop2 });
+	}
+		return dist_data_.at({ stop2,stop1 });
+	
+	
+}
