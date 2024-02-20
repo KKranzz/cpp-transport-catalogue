@@ -58,6 +58,7 @@ void inreader::InputReader::ParseLine(std::string_view line)
         }
         else 
         {
+           
             res.command = "AStop";
             res.id = std::move(std::string(line.begin() + line.find_first_of(" ") + 1,
                 line.begin() + line.find_first_of(":")));
@@ -82,27 +83,53 @@ void inreader::InputReader::ParseLine(std::string_view line)
 /**
  * Наполняет данными транспортный справочник, используя команды из commands_
  */
-void inreader::InputReader::ApplyCommands(transport_catalogue::processing::TransportCatalogue& catalogue)
+void inreader::InputReader::ApplyCommands(transport_catalogue::processing::TransportCatalogue& catalogue, bool first_proccess, std::vector<std::string>&& save_)
 {
-    std::sort(commands_.begin(), commands_.end(), [](const auto& lhs, const auto& rhs)
-     {
-          return lhs.command == "AStop" && rhs.command != "AStop";
-     });
+    if (first_proccess) {
+        std::sort(commands_.begin(), commands_.end(), [](const auto& lhs, const auto& rhs)
+            {
+                return lhs.command == "AStop" && rhs.command != "AStop";
+            });
+    }
+
+    std::vector<std::string> save_id = save_;
+    int current_id = 0;
 
     for (auto& command : commands_) 
     {
         if (command.command == "AStop")
         {
-            std::vector<std::string> params = std::move(ParserByParameters(command.description, ','));
-            geo_calc::Coordinates coord(std::stod(params[0]), std::stod(params[1]));
-            catalogue.AddStop(std::move(command.id), coord);
+            if (first_proccess) {
+                save_id.push_back(command.id);
+                std::vector<std::string> params = std::move(ParserByParameters(command.description, ','));
+                geo_calc::Coordinates coord(std::stod(params[0]), std::stod(params[1]));
+                catalogue.AddStop(std::move(command.id), coord);
+                
+            }
+            else 
+            {
+                std::vector<std::string> params = std::move(ParserByParameters(command.description, ','));
+                if (params.size() > 2) // первые два это координата, остальные строки с дистанцией
+                {
+                    int dist = 0;
+                    std::string first_station, second_station;
+                    for (int i = 2; i < static_cast<int>(params.size()); ++i) 
+                    {// Stop Tolstopaltsevo: 55.611087, 37.20829, 3900m to Marushkino, 4100m to Tret
+                        dist = stoi(std::string(params[i].begin(), params[i].begin() + params[i].find("m")));
+                        first_station = save_id[current_id];
+                        second_station = std::string(params[i].begin() + params[i].find(" to ") + 4, params[i].end()); // мб запятая
+                        catalogue.AddDistance(std::move(first_station), std::move(second_station), dist);
+                    }
+                }
+                current_id++;
+            }
         }
-        else if (command.command == "ACBus") 
+        else if (command.command == "ACBus" && first_proccess) 
         {
             std::vector<std::string> params = std::move(ParserByParameters(command.description, '>'));
             catalogue.AddBus(command.id, params);
         }
-        else if (command.command == "ALBus")
+        else if (command.command == "ALBus" && first_proccess)
         {
             std::vector<std::string> params = std::move(ParserByParameters(command.description, '-'));
             std::vector <std::string> second_part(params.begin(), params.end()-1);
@@ -113,6 +140,13 @@ void inreader::InputReader::ApplyCommands(transport_catalogue::processing::Trans
             catalogue.AddBus(command.id, params);
         }
     }
+
+    if (first_proccess) 
+    {
+        first_proccess = false;
+        ApplyCommands(catalogue, first_proccess, std::move(save_id));
+    }
+
 }
 
 void inreader::InputReader::StartParcing(transport_catalogue::processing::TransportCatalogue& catalogue)
@@ -126,6 +160,6 @@ void inreader::InputReader::StartParcing(transport_catalogue::processing::Transp
             getline(*str_, line);
             this->ParseLine(line);
         }
-        this->ApplyCommands(catalogue);
+        this->ApplyCommands(catalogue, true, std::vector<std::string>{});
     }
 }
