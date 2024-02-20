@@ -38,7 +38,7 @@ namespace inreader {
         /**
          * Наполняет данными транспортный справочник, используя команды из commands_
          */
-        void ApplyCommands(transport_catalogue::processing::TransportCatalogue& catalogue);
+        void ApplyCommands(transport_catalogue::processing::TransportCatalogue& catalogue, bool first_process, std::vector<std::string>&& save);
 
         void StartParcing(transport_catalogue::processing::TransportCatalogue& catalogue);
     private:
