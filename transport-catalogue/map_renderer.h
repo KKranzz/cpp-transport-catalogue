@@ -87,235 +87,23 @@ private:
 
 
 
-class MapRenderer 
+class MapRenderer
 {
 public:
-	void GetStatFromJson(json::Document& data)
-	{
+
+	void SetTransportCatalogue(transport_catalogue::processing::TransportCatalogue& ts);
 	
-		json::Node render_sett = data.GetRoot().AsMap().at("render_settings");
-		
-		widght = render_sett.AsMap().at("width").AsDouble();
-		height = render_sett.AsMap().at("height").AsDouble();
-		padding = render_sett.AsMap().at("padding").AsDouble();
-		line_width = render_sett.AsMap().at("line_width").AsDouble();
-		stop_radius = render_sett.AsMap().at("stop_radius").AsDouble();
-		bus_label_font_size = render_sett.AsMap().at("bus_label_font_size").AsInt();
-		bus_label_offset.emplace_back(render_sett.AsMap().at("bus_label_offset").AsArray().at(0).AsDouble());
-		bus_label_offset.emplace_back(render_sett.AsMap().at("bus_label_offset").AsArray().at(1).AsDouble());
-		stop_label_font_size = render_sett.AsMap().at("stop_label_font_size").AsInt();
-		stop_label_offset.emplace_back(render_sett.AsMap().at("stop_label_offset").AsArray().at(0).AsDouble());
-		stop_label_offset.emplace_back(render_sett.AsMap().at("stop_label_offset").AsArray().at(1).AsDouble());
-		
-		json::Node u_color = render_sett.AsMap().at("underlayer_color");
-		if (u_color.IsArray()) 
-		{
-			if (u_color.AsArray().size() == 3) 
-			{
-				underlayer_color = svg::Rgb({ static_cast<uint8_t>(u_color.AsArray().at(0).AsInt()),
-					static_cast<uint8_t>(u_color.AsArray().at(1).AsInt()), static_cast<uint8_t>(u_color.AsArray().at(2).AsInt()) });
-			}
-			else 
-			{
-				underlayer_color = svg::Rgba({ static_cast<uint8_t>(u_color.AsArray().at(0).AsInt()),
-					static_cast<uint8_t>(u_color.AsArray().at(1).AsInt()), static_cast<uint8_t>(u_color.AsArray().at(2).AsInt()), u_color.AsArray().at(3).AsDouble() });
-			}
-		}
-		else if(u_color.IsString())
-		{
-			underlayer_color = u_color.AsString();
-		}
-		else 
-		{
-			underlayer_color = svg::Color("none");
-		}
+	void CreatePolyline();
 
-		underlayer_width = render_sett.AsMap().at("underlayer_width").AsDouble();
+	void CreateBusNames();
 
-		for (auto& color : render_sett.AsMap().at("color_palette").AsArray()) 
-		{
-			if (color.IsArray())
-			{
-				if (color.AsArray().size() == 3)
-				{
-					color_palette.emplace_back(svg::Rgb({ static_cast<uint8_t>(color.AsArray().at(0).AsInt()),
-						static_cast<uint8_t>(color.AsArray().at(1).AsInt()), static_cast<uint8_t>(color.AsArray().at(2).AsInt())}));
-				}
-				else
-				{
-					color_palette.emplace_back(svg::Rgba({ static_cast<uint8_t>(color.AsArray().at(0).AsInt()),
-						static_cast<uint8_t>(color.AsArray().at(1).AsInt()), static_cast<uint8_t>(color.AsArray().at(2).AsInt()), color.AsArray().at(3).AsDouble() }));
-				}
-			}
-			else if(color.IsString())
-			{
-				color_palette.emplace_back(color.AsString());
-			}
-			else 
-			{
-				color_palette.emplace_back(svg::Color("none"));
-			}
-		}
-		
-	}
+	void CreateStopCircles();
+
+	void CreateStopNames();
+
+	void CreateSvg(std::ostream& os);
 	
-
-	void SetTs(transport_catalogue::processing::TransportCatalogue& ts) 
-	{
-		ts_ = &ts;
-	}
-
-	void CreateSvg(std::ostream& os)
-	{
-		svg::Document res;
-		std::vector<std::string> name_bus = ts_->GetBusNames();
-		std::sort(name_bus.begin(), name_bus.end());
-		std::vector<geo_calc::Coordinates> coord;
-		std::vector<int> sizes_pol;
-		int current_color = 0;
-		int modul_color = color_palette.size();
-
-		for (auto& name : name_bus) 
-		{
-			int c_size = 0;
-			for (auto& stop : ts_->FindBus(name)->stops_) 
-			{
-				coord.emplace_back(stop->coord_);
-				c_size++;
-			}
-			sizes_pol.emplace_back(c_size);
-		
-
-		}
-
-		if (!coord.empty()) {
-			
-			SphereProjector sph{ coord.begin(), coord.end(), widght, height, padding };
-
-			int c_number = 0;
-			int bus_counter = 0;
-			for (auto& num : sizes_pol)
-			{
-				if (num != 0) {
-					svg::Polyline pol;
-				
-					for (int i = 0; i < num; ++i, ++c_number)
-					{
-						pol.AddPoint(sph(coord.at(c_number)));
-					}
-
-					pol.SetStrokeWidth(line_width);
-					pol.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
-					pol.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
-					pol.SetFillColor(svg::Color("none"));
-					pol.SetStrokeColor(color_palette.at(current_color % modul_color));
-
-					current_color++;
-					res.Add(pol);
-
-
-				}
-				bus_counter++;
-			}
-			
-			current_color = 0;
-
-			for (auto& name : name_bus) 
-			{
-				if (ts_->FindBus(name)->stops_.empty()) { continue; }
-
-				svg::Text text;
-				svg::Text sub_text;
-				text.SetPosition(sph(ts_->FindBus(name)->stops_.at(0)->coord_));
-				sub_text.SetPosition(sph(ts_->FindBus(name)->stops_.at(0)->coord_));
-				text.SetOffset({ bus_label_offset.at(0), bus_label_offset.at(1) });
-				sub_text.SetOffset({ bus_label_offset.at(0), bus_label_offset.at(1) });
-				text.SetFontSize(bus_label_font_size);
-				sub_text.SetFontSize(bus_label_font_size);
-				text.SetFontFamily("Verdana");
-				sub_text.SetFontFamily("Verdana");
-				text.SetFontWeight("bold");
-				sub_text.SetFontWeight("bold");
-				text.SetData(name);
-				sub_text.SetData(name);
-
-				sub_text.SetStrokeColor(underlayer_color);
-
-				sub_text.SetFillColor(underlayer_color);
-				sub_text.SetStrokeWidth(underlayer_width);
-				sub_text.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
-				sub_text.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
-
-				text.SetFillColor(color_palette.at(current_color % modul_color));
-				res.Add(sub_text);
-				res.Add(text);
-
-
-				if (!ts_->FindBus(name)->is_roundtrip_ && ts_->FindBus(name)->stops_.at(ts_->FindBus(name)->stops_.size() / 2) != ts_->FindBus(name)->stops_.at(0))
-				{
-					text.SetPosition(sph(ts_->FindBus(name)->stops_.at(ts_->FindBus(name)->stops_.size() / 2)->coord_));
-					sub_text.SetPosition(sph(ts_->FindBus(name)->stops_.at(ts_->FindBus(name)->stops_.size() / 2)->coord_));
-					res.Add(sub_text);
-					res.Add(text);
-				}
-
-			
-				current_color++;
-
-			}
-
-			std::vector<std::string> stopname = ts_->GetStopNames();
-			std::sort(stopname.begin(), stopname.end());
-
-			for (auto& name : stopname)
-			{
-				if (ts_->FindStop(name)->buses_.empty()) { continue; }
-
-				svg::Circle cr;
-				cr.SetCenter(sph(ts_->FindStop(name)->coord_));
-				cr.SetRadius(stop_radius);
-				cr.SetFillColor(svg::Color("white"));
-				res.Add(cr);
-
-			}
-
-			for (auto& name : stopname)
-			{
-				if (ts_->FindStop(name)->buses_.empty()) { continue; }
-
-				svg::Text text;
-				svg::Text sub_text;
-
-				text.SetPosition(sph(ts_->FindStop(name)->coord_));
-				sub_text.SetPosition(sph(ts_->FindStop(name)->coord_));
-				text.SetOffset(svg::Point(stop_label_offset.at(0), stop_label_offset.at(1)));
-				sub_text.SetOffset(svg::Point(stop_label_offset.at(0), stop_label_offset.at(1)));
-				text.SetFontSize(stop_label_font_size);
-				sub_text.SetFontSize(stop_label_font_size);
-				text.SetFontFamily("Verdana");
-				sub_text.SetFontFamily("Verdana");
-				text.SetData(name);
-				sub_text.SetData(name);
-				sub_text.SetStrokeColor(underlayer_color);
-				sub_text.SetFillColor(underlayer_color);
-				sub_text.SetStrokeWidth(underlayer_width);
-				sub_text.SetStrokeLineCap(svg::StrokeLineCap::ROUND);
-				sub_text.SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
-				text.SetFillColor(svg::Color("black"));
-				res.Add(sub_text);
-				res.Add(text);
-			
-			}
-
-
-		}
-
-
-		res.Render(os);
-	}
 	
-
-private:
 	double widght = 0;
 	double height = 0;
 	double padding = 0;
@@ -328,6 +116,16 @@ private:
 	svg::Color underlayer_color;
 	double underlayer_width = 0;
 	std::vector<svg::Color> color_palette;
-
+private:
 	transport_catalogue::processing::TransportCatalogue* ts_ = nullptr;
+	svg::Document scheme_;
+	std::vector<std::string> name_bus;
+	std::vector<geo_calc::Coordinates> coord;
+	std::vector<std::string> stopname;
+	std::vector<int> sizes_pol;
+	int current_color = 0;
+	int modul_color = 0;
+	int c_number = 0;
+	int bus_counter = 0;
+	SphereProjector* sph = nullptr;
 };
