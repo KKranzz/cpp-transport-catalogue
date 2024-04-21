@@ -104,18 +104,24 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 
 	json::Array root_;
 	
+	json::Builder builder_;
+	
+	builder_.StartArray();
 	
 	for (auto& dict : *stat_requests) 
 	{
-		json::Dict sub_root_;
-
-		sub_root_.insert({ "request_id", dict.AsMap().at("id").AsInt() });
+		
+		builder_.StartDict();
+		builder_.Key("request_id").Value(dict.AsMap().at("id").AsInt());
+	
 
 		if (dict.AsMap().at("type").AsString() == "Stop")
 			{
 				if (transport_catalogue.FindStop(dict.AsMap().at("name").AsString()) == nullptr)
 				{
-					sub_root_.insert({ "error_message", std::string("not found") });
+				
+
+					builder_.Key("error_message").Value(std::string("not found"));
 				}
 				else
 				{
@@ -127,14 +133,16 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 						
 						buses_in_stop.second.push_back(std::string(bus));
 					}
-					sub_root_.insert(buses_in_stop);
+				
+					builder_.Key(buses_in_stop.first).Value(buses_in_stop.second);
 				}
 			}
 			else if (dict.AsMap().at("type").AsString() == "Bus")
 			{
 				if (transport_catalogue.FindBus(dict.AsMap().at("name").AsString()) == nullptr)
 				{
-					sub_root_.insert({ "error_message", std::string("not found") });
+			
+					builder_.Key("error_message").Value(std::string("not found"));
 				}
 				else
 				{
@@ -149,12 +157,13 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 
 					}
 
-					sub_root_.insert({ "curvature", route_length / geo_length });
-					sub_root_.insert({ "route_length", static_cast<int>(route_length) });
-					sub_root_.insert({ "stop_count", static_cast<int>(t_bus->stops_.size()) });
+				
 					std::unordered_set<const domain::Stop*> unique(t_bus->stops_.begin(), t_bus->stops_.end());
-					sub_root_.insert({ "unique_stop_count", static_cast<int>(unique.size()) });
-
+			
+					builder_.Key("curvature").Value(route_length / geo_length);
+					builder_.Key("route_length").Value(static_cast<int>(route_length));
+					builder_.Key("stop_count").Value(static_cast<int>(t_bus->stops_.size()));
+					builder_.Key("unique_stop_count").Value(static_cast<int>(unique.size()));
 				}
 			}
 			else if (dict.AsMap().at("type").AsString() == "Map") 
@@ -164,17 +173,19 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 				map_renderer.SetTransportCatalogue(transport_catalogue);
 				map_renderer.CreateSvg(bf);
 				
-				sub_root_.insert({ "map", bf.str() });
-				
+			
+
+				builder_.Key("map").Value(bf.str());
 				
 			}
 			
-		
-		root_.push_back(sub_root_);
-		sub_root_.clear();
+		builder_.EndDict();
+
 	}
 
-	json::Print(json::Document(root_), out);
+	builder_.EndArray();
+	
+	json::Print(json::Document(builder_.Build()), out);
 
 }
 
