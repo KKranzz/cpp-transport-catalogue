@@ -7,38 +7,21 @@ namespace json
 {
 	class Builder
 	{
-
+		class KeyContext;
+		class DictValueContext; 
+		class ArrayValueContext;
+		class ValueContext;
 		
-		class KeyContext; //разрешен StartDict() и StartArray()
-		class DictValueContext; // отсутствие метода Value()
-		class ArrayValueContext;  // запрет Key() 
-		class ValueContext; // обертка без ограничений для избежания конфликтов с типами
-		// используется в DictValueContext и ArrayValueContext
-		class StartDictContext;  // запрещен StartDict() и StartArray() 
-	
-	
 	public:
-
 		KeyContext Key(std::string key);
-		
-
 		ValueContext Value(Node::Value val);
-		
-		StartDictContext StartDict();
-		
+		DictValueContext StartDict();
 		ValueContext EndDict();
-		
 		ArrayValueContext StartArray();
-	
-
 		ValueContext EndArray();
-		
 		Node Build();
-		
-
 		~Builder();
 	
-
 		//flags
 		bool key_active = false;
 		bool array_active = false;
@@ -50,7 +33,6 @@ namespace json
 		Dict dict_;
 		Node first_;
 		//data
-
 		Node root_;
 		std::vector<Node*> node_stack_;
 	private:
@@ -61,22 +43,19 @@ namespace json
 				: builder_(builder)
 			{
 			}
-			KeyContext Key(std::string key);
-		
 
-			StartDictContext StartDict();
-			
+			KeyContext Key(std::string key);
+			DictValueContext StartDict();
 			ArrayValueContext StartArray();
-			
-			ValueContext EndDict();
-			
+			ValueContext EndDict(); // у BaseContext не определен метод Value(), 
+			// если его определить, то не получиться ограничить вызов Value() 
+			//согласно словарю или массиву(требования для dict и arr взаимоисключены и метод по возвращаемому типу не переопределяется), 
+			//потому что у него будет общий интерфейс без ограничений.
+			//Я могу отказаться от наследования BaseContext в классах где нужен свой Value(),
+			//но это будет дублирование кода.
 			ValueContext EndArray();
-			
 			Node Build();
 			
-
-
-
 			Builder& builder_;
 		};
 
@@ -89,7 +68,6 @@ namespace json
 
 			DictValueContext Value(Node::Value val);
 			
-
 			KeyContext Key(std::string key) = delete;
 			ValueContext EndDict() = delete;
 			ValueContext EndArray() = delete;
@@ -103,32 +81,11 @@ namespace json
 				: BaseContext(base)
 			{
 			}
-
 			ValueContext Value(Node::Value val);
 			
 		};
 
-		class StartDictContext : public BaseContext {
-		public:
-			StartDictContext(BaseContext base)
-				: BaseContext(base)
-			{
-			}
-
-
-			ValueContext EndArray() = delete;
-			Node Build() = delete;
-			StartDictContext StartDict() = delete;
-			ArrayValueContext StartArray() = delete;
-
-		};
-
 		
-
-		
-
-		
-
 		class DictValueContext : public BaseContext {
 		public:
 			DictValueContext(BaseContext base)
@@ -138,9 +95,8 @@ namespace json
 
 			ValueContext EndArray() = delete;
 			Node Build() = delete;
-			StartDictContext StartDict() = delete;
+			DictValueContext StartDict() = delete;
 			ArrayValueContext StartArray() = delete;
-
 
 		};
 
@@ -152,16 +108,9 @@ namespace json
 			}
 			ArrayValueContext Value(Node::Value val);
 			
-
 			KeyContext Key(std::string key) = delete;
 			ValueContext EndDict() = delete;
 			Node Build() = delete;
-
-
 		};
-
 	};
-
-
-
 }

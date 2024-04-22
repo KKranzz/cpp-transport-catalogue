@@ -178,12 +178,9 @@ namespace json
 				}
 			}
 
-
-
-
 			return ValueContext(*this);
 		}
-		Builder::StartDictContext Builder::StartDict()
+		Builder::DictValueContext Builder::StartDict()
 		{
 			if (dict_active)
 			{
@@ -192,7 +189,6 @@ namespace json
 					throw std::logic_error("Wrong StartDict() Flag(without key in dict added)");
 				}
 				key_active = false;
-				//keys_.push_back(std::move(key_));
 				node_stack_.push_back(new Node(std::move(key_)));
 				node_stack_.push_back(new Node(std::move(dict_)));
 				dict_.clear();
@@ -210,7 +206,7 @@ namespace json
 			else { throw std::logic_error("Wrong StartDict() Flag"); }
 			dict_active = true;
 
-			return StartDictContext(*this);
+			return DictValueContext(*this);
 		}
 
 		Builder::ValueContext Builder::EndDict()
@@ -219,8 +215,6 @@ namespace json
 			{
 				throw std::logic_error("Incorrect calling EndDict()");
 			}
-
-
 
 			if (node_stack_.empty())
 			{
@@ -244,14 +238,11 @@ namespace json
 				delete node_stack_.back();
 				node_stack_.pop_back();
 				key_ = node_stack_.back()->AsString();
-				//keys_.pop_back();
 				delete node_stack_.back();
 				node_stack_.pop_back();
 				dict_.insert({ key_, std::move(bf) });
 
 			}
-
-
 			if (!dict_active)
 			{
 				dict_.clear();
@@ -268,7 +259,6 @@ namespace json
 					throw std::logic_error("Wrong StartArray() Flag(without key in dict added)");
 				}
 				key_active = false;
-				//keys_.push_back(std::move(key_));
 				node_stack_.push_back(new Node(std::move(key_)));
 				node_stack_.push_back(new Node(std::move(dict_)));
 				dict_.clear();
@@ -296,8 +286,6 @@ namespace json
 			{
 				throw std::logic_error("Incorrect calling EndArray()");
 			}
-
-
 
 			if (node_stack_.empty())
 			{
@@ -328,7 +316,6 @@ namespace json
 
 			}
 
-
 			if (!array_active) { arr_.clear(); }
 
 			return ValueContext(*this);
@@ -340,21 +327,9 @@ namespace json
 			{
 				throw std::logic_error("Incorrect build");
 			}
-
-			/*	if (!arr_.empty())
-				{
-					return Node(std::move(arr_));
-				}
-				else if (!dict_.empty())
-				{
-					return Node(std::move(dict_));
-				}
-				*/
-
 			return Node(std::move(first_));
 
 		}
-
 
 		Builder::~Builder()
 		{
@@ -362,18 +337,14 @@ namespace json
 			{
 				delete node;
 			}
-
-
 		}
 
-	
-		
 		Builder::KeyContext Builder::BaseContext::Key(std::string key)
 			{
 				return builder_.Key(std::move(key));
 			}
 
-		Builder::StartDictContext Builder::BaseContext::StartDict()
+		Builder::DictValueContext Builder::BaseContext::StartDict()
 			{
 				return builder_.StartDict();
 			}
@@ -394,10 +365,6 @@ namespace json
 				return builder_.Build();
 			}
 
-
-
-
-	
 			Builder::DictValueContext Builder::KeyContext::Value(Node::Value val)
 			{
 				auto default_value = ValueContext(builder_);
@@ -405,15 +372,10 @@ namespace json
 				return DictValueContext(default_value.builder_);
 			}
 
-	
-	
-
 			Builder::ValueContext Builder::ValueContext::Value(Node::Value val)
 			{
 				return builder_.Value(val);
 			}
-		
-
 		
 			Builder::ArrayValueContext Builder::ArrayValueContext::Value(Node::Value val)
 			{
@@ -422,6 +384,4 @@ namespace json
 				return ArrayValueContext(default_.builder_);
 			}
 		
-
-
 }
