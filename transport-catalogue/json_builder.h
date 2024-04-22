@@ -36,7 +36,7 @@ namespace json
 		Node Build();
 		
 
-		~Builder() = default;
+		~Builder();
 	
 
 		//flags
@@ -46,14 +46,13 @@ namespace json
 		bool first_elem = true;
 		//meta
 		std::string key_;
-		std::vector<std::string> keys_;
 		Array arr_;
 		Dict dict_;
 		Node first_;
 		//data
 
 		Node root_;
-		std::vector<Node> node_stack_;
+		std::vector<Node*> node_stack_;
 	private:
 
 		class BaseContext {

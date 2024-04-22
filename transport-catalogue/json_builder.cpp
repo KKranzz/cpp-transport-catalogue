@@ -193,13 +193,13 @@ namespace json
 				}
 				key_active = false;
 				//keys_.push_back(std::move(key_));
-				node_stack_.push_back(std::move(key_));
-				node_stack_.push_back(std::move(dict_));
+				node_stack_.push_back(new Node(std::move(key_)));
+				node_stack_.push_back(new Node(std::move(dict_)));
 				dict_.clear();
 			}
 			else if (array_active)
 			{
-				node_stack_.push_back(std::move(arr_));
+				node_stack_.push_back(new Node(std::move(arr_)));
 				arr_.clear();
 				array_active = false;
 			}
@@ -227,25 +227,25 @@ namespace json
 				dict_active = false;
 				first_ = Node(std::move(dict_));
 			}
-			else if (node_stack_.back().IsArray())
+			else if (node_stack_.back()->IsArray())
 			{
 				dict_active = false;
 				array_active = true;
-				arr_ = node_stack_.back().AsArray();
-				
+				arr_ = node_stack_.back()->AsArray();
+				delete node_stack_.back();
 				node_stack_.pop_back();
 				arr_.push_back(std::move(dict_));
 
 			}
-			else if (node_stack_.back().IsMap())
+			else if (node_stack_.back()->IsMap())
 			{
 				Dict bf = std::move(dict_);
-				dict_ = node_stack_.back().AsMap();
-				
+				dict_ = node_stack_.back()->AsMap();
+				delete node_stack_.back();
 				node_stack_.pop_back();
-				key_ = node_stack_.back().AsString();
+				key_ = node_stack_.back()->AsString();
 				//keys_.pop_back();
-				
+				delete node_stack_.back();
 				node_stack_.pop_back();
 				dict_.insert({ key_, std::move(bf) });
 
@@ -268,14 +268,15 @@ namespace json
 					throw std::logic_error("Wrong StartArray() Flag(without key in dict added)");
 				}
 				key_active = false;
-				keys_.push_back(std::move(key_));
-				node_stack_.push_back(std::move(dict_));
+				//keys_.push_back(std::move(key_));
+				node_stack_.push_back(new Node(std::move(key_)));
+				node_stack_.push_back(new Node(std::move(dict_)));
 				dict_.clear();
 				dict_active = false;
 			}
 			else if (array_active)
 			{
-				node_stack_.push_back(std::move(arr_));
+				node_stack_.push_back(new Node(std::move(arr_)));
 				arr_.clear();
 
 			}
@@ -303,25 +304,26 @@ namespace json
 				array_active = false;
 				first_ = Node(std::move(arr_));
 			}
-			else if (node_stack_.back().IsArray())
+			else if (node_stack_.back()->IsArray())
 			{
 
 				Array bf = std::move(arr_);
-				arr_ = node_stack_.back().AsArray();
-			
+				arr_ = node_stack_.back()->AsArray();
+				delete node_stack_.back();
 				node_stack_.pop_back();
 				arr_.push_back(std::move(bf));
 
 			}
-			else if (node_stack_.back().IsMap())
+			else if (node_stack_.back()->IsMap())
 			{
 				array_active = false;
 				dict_active = true;
-				dict_ = node_stack_.back().AsMap();
-				
+				dict_ = node_stack_.back()->AsMap();
+				delete node_stack_.back();
 				node_stack_.pop_back();
-				key_ = keys_.back();
-				keys_.pop_back();
+				key_ = node_stack_.back()->AsString();
+				delete node_stack_.back();
+				node_stack_.pop_back();
 				dict_.insert({ key_, std::move(arr_) });
 
 			}
@@ -354,8 +356,15 @@ namespace json
 		}
 
 
-		
-		
+		Builder::~Builder()
+		{
+			for (auto& node : node_stack_)
+			{
+				delete node;
+			}
+
+
+		}
 
 	
 		
@@ -413,18 +422,6 @@ namespace json
 				return ArrayValueContext(default_.builder_);
 			}
 		
-		
-		
-	
-		
 
-		
-	 
-
-	
-
-	
-
-		
 
 }
