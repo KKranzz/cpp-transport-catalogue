@@ -92,18 +92,18 @@ void JsonReader::JsonIn(transport_catalogue::processing::TransportCatalogue& tra
 
 		if (!router_setings->empty()) 
 		{
-			gs_.SetupVelocity(router_setings->at("bus_velocity").AsDouble());
-			gs_.SetupWaitTime(router_setings->at("bus_wait_time").AsInt());
+			tr_.SetupVelocity(router_setings->at("bus_velocity").AsDouble());
+			tr_.SetupWaitTime(router_setings->at("bus_wait_time").AsInt());
 		}
 
 		size_t id = 0;
 		for (auto& stop : transport_catalogue.GetStopNames()) 
 		{
-			gs_.stopname_id_data_[stop] = id;
+			tr_.stopname_id_data_[stop] = id;
 			id++;
 		}
 
-		gs_.ConstructGraph(transport_catalogue);
+		tr_.ConstructGraph(transport_catalogue);
 	}
 		
 }
@@ -112,7 +112,7 @@ void JsonReader::JsonIn(transport_catalogue::processing::TransportCatalogue& tra
 void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& transport_catalogue, std::ostream& out)
 {
 	
-	graph::Router<double> router(gs_.graph_);
+	tr_.CreateRouterIdentity();
 
 	const json::Array* stat_requests = &(data_request_.GetRoot().AsMap().at("stat_requests").AsArray());
 
@@ -190,9 +190,9 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 			{
 			  std::string from = dict.AsMap().at("from").AsString();
 			  std::string to = dict.AsMap().at("to").AsString();
-			  size_t from_id = gs_.stopname_id_data_[from];
-			  size_t to_id = gs_.stopname_id_data_[to];
-			  std::optional<graph::Router<double>::RouteInfo> res = router.BuildRoute(from_id, to_id);
+			  size_t from_id = tr_.stopname_id_data_[from];
+			  size_t to_id = tr_.stopname_id_data_[to];
+			  std::optional<graph::Router<double>::RouteInfo> res = tr_.BuildRoute(from_id, to_id);
 			  
 			  if (res) {
 				  builder_.Key("total_time").Value(res.value().weight);
@@ -200,7 +200,7 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 
 				  for (auto& edge_ : res.value().edges)
 				  {
-					  auto edge_in = gs_.graph_.GetEdge(edge_);
+					  auto edge_in = tr_.graph_.GetEdge(edge_);
 					  builder_.StartDict();
 					  if (edge_in.state == graph::StatusEdge::WAIT) {
 						  builder_.Key("type").Value("Wait");

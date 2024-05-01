@@ -27,7 +27,7 @@ public:
 	
 	json::Document data_request_;
 
-	GraphConstructor gs_;
+	TransportRouter tr_;
 
 
 

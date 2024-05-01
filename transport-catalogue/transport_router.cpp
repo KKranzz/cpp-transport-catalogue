@@ -1,6 +1,6 @@
 #include "transport_router.h"
 
-void GraphConstructor::ConstructGraph(transport_catalogue::processing::TransportCatalogue& ts)
+void TransportRouter::ConstructGraph(transport_catalogue::processing::TransportCatalogue& ts)
 {
 	
 	double prev_distance = 0;
