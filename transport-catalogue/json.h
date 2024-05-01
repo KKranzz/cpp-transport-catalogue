@@ -38,6 +38,8 @@ namespace json {
 
         const Array& AsArray() const;
         const Dict& AsMap() const;
+        Array& AsArrayForMove();
+        Dict& AsMapForMove();
         int AsInt() const;
         double AsDouble() const;
         const std::string& AsString() const;

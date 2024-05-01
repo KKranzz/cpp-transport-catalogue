@@ -9,6 +9,7 @@
 #include "geo.h"
 #include "domain.h"
 
+
 namespace transport_catalogue {
 	
 	namespace processing {
@@ -33,11 +34,15 @@ namespace transport_catalogue {
 
 			void AddDistance(std::string&& first, std::string&& second, int dist);
 
-			int FindDist(domain::Stop* stop1, domain::Stop* stop2);
+			 int FindDist( domain::Stop* stop1, domain::Stop* stop2);
+
+			const std::deque<domain::Bus>& GetBusData() const;
 
 			std::vector<std::string> GetBusNames();
 		
 			std::vector<std::string> GetStopNames();
+
+			
 
 		private:
 			std::deque<domain::Stop> stops_;
@@ -45,6 +50,8 @@ namespace transport_catalogue {
 			std::deque<domain::Bus> buses_;
 			std::unordered_map <std::string_view, const domain::Bus*> busname_to_bus_;
 			std::unordered_map <std::pair<domain::Stop*, domain::Stop*>, int, TransportHasher> dist_data_;
+			
+
 		};
 	}
 

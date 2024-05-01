@@ -67,6 +67,8 @@ void transport_catalogue::processing::TransportCatalogue::AddDistance(std::strin
 	
 }
 
+ 
+
  std::vector<std::string> transport_catalogue::processing::TransportCatalogue::GetBusNames()
  {
 	 std::vector<std::string> res;
@@ -89,4 +91,10 @@ void transport_catalogue::processing::TransportCatalogue::AddDistance(std::strin
 	 }
 
 	 return res;
+ }
+
+ const std::deque<domain::Bus>& transport_catalogue::processing::TransportCatalogue::GetBusData() const
+ {
+	
+	 return buses_;
  }

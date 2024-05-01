@@ -16,7 +16,6 @@ void JsonReader::JsonIn(transport_catalogue::processing::TransportCatalogue& tra
 		domain::Stop new_stop;
 		new_stop = domain::Stop();
 		
-
 	    if (dict.AsMap().at("type").AsString() =="Bus")
 		{
 			continue;
@@ -89,20 +88,35 @@ void JsonReader::JsonIn(transport_catalogue::processing::TransportCatalogue& tra
 		}
 
 
+		const json::Dict* router_setings = &(data_request_.GetRoot().AsMap().at("routing_settings").AsMap());
+
+		if (!router_setings->empty()) 
+		{
+			gs_.SetupVelocity(router_setings->at("bus_velocity").AsDouble());
+			gs_.SetupWaitTime(router_setings->at("bus_wait_time").AsInt());
+		}
+
+		size_t id = 0;
+		for (auto& stop : transport_catalogue.GetStopNames()) 
+		{
+			gs_.stopname_id_data_[stop] = id;
+			id++;
+		}
+
+		gs_.ConstructGraph(transport_catalogue);
 	}
 		
 }
 
 
-
-
-
 void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& transport_catalogue, std::ostream& out)
 {
 	
+	graph::Router<double> router(gs_.graph_);
+
 	const json::Array* stat_requests = &(data_request_.GetRoot().AsMap().at("stat_requests").AsArray());
 
-	json::Array root_;
+	
 	
 	json::Builder builder_;
 	
@@ -113,14 +127,12 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 		
 		builder_.StartDict();
 		builder_.Key("request_id").Value(dict.AsMap().at("id").AsInt());
-	
+	    
 
 		if (dict.AsMap().at("type").AsString() == "Stop")
 			{
 				if (transport_catalogue.FindStop(dict.AsMap().at("name").AsString()) == nullptr)
 				{
-				
-
 					builder_.Key("error_message").Value(std::string("not found"));
 				}
 				else
@@ -141,7 +153,6 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 			{
 				if (transport_catalogue.FindBus(dict.AsMap().at("name").AsString()) == nullptr)
 				{
-			
 					builder_.Key("error_message").Value(std::string("not found"));
 				}
 				else
@@ -172,12 +183,50 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 				MapRenderer map_renderer = std::move(GetMapData());
 				map_renderer.SetTransportCatalogue(transport_catalogue);
 				map_renderer.CreateSvg(bf);
-				
-			
-
-				builder_.Key("map").Value(bf.str());
+				builder_.Key("map").Value(std::move(bf.str()));
 				
 			}
+			else if (dict.AsMap().at("type").AsString() == "Route")
+			{
+			  std::string from = dict.AsMap().at("from").AsString();
+			  std::string to = dict.AsMap().at("to").AsString();
+			  size_t from_id = gs_.stopname_id_data_[from];
+			  size_t to_id = gs_.stopname_id_data_[to];
+			  std::optional<graph::Router<double>::RouteInfo> res = router.BuildRoute(from_id, to_id);
+			  
+			  if (res) {
+				  builder_.Key("total_time").Value(res.value().weight);
+				  builder_.Key("items").StartArray();
+
+				  for (auto& edge_ : res.value().edges)
+				  {
+					  auto edge_in = gs_.graph_.GetEdge(edge_);
+					  builder_.StartDict();
+					  if (edge_in.state == graph::StatusEdge::WAIT) {
+						  builder_.Key("type").Value("Wait");
+						  builder_.Key("stop_name").Value(edge_in.data);
+						  builder_.Key("time").Value(edge_in.weight);
+					  }
+					  else 
+					  {
+						  builder_.Key("type").Value("Bus");
+						  builder_.Key("bus").Value(edge_in.data);
+						  builder_.Key("span_count").Value(static_cast<int>(edge_in.span_count));
+						  builder_.Key("time").Value(edge_in.weight);
+					  }
+					  builder_.EndDict();
+				  }
+				  builder_.EndArray();
+			  }
+			  else 
+			  {
+				  builder_.Key("error_message").Value(std::string("not found"));
+			  }
+
+			 
+			}
+		    
+
 			
 		builder_.EndDict();
 

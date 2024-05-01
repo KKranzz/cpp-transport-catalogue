@@ -9,6 +9,7 @@
 #include "transport_catalogue.h"
 #include "map_renderer.h"
 #include "json_builder.h"
+#include "transport_router.h"
 
 
 
@@ -25,5 +26,10 @@ public:
 	MapRenderer GetMapData();
 	
 	json::Document data_request_;
+
+	GraphConstructor gs_;
+
+
+
 };
 

@@ -37,7 +37,6 @@ namespace json {
             return Node(move(result));
         }
 
-
         Node LoadNumber(std::istream& input) {
             using namespace std::literals;
 
@@ -362,6 +361,24 @@ namespace json {
         return get<Dict>(value_);
     }
 
+
+     Array& Node::AsArrayForMove()  {
+        if (!holds_alternative<Array>(value_)) {
+            // ?
+            throw std::logic_error("");
+        }
+        return const_cast<Array&>(get<Array>(value_));
+    }
+
+     Dict& Node::AsMapForMove()  {
+        if (!holds_alternative<Dict>(value_)) {
+            // ?
+            throw std::logic_error("");
+        }
+        return const_cast<Dict&>(get<Dict>(value_));
+    }
+
+
     int Node::AsInt() const {
         if (!holds_alternative<int>(value_)) {
             // ?
@@ -593,7 +610,6 @@ namespace json {
         out  << "null"sv;
     }
 
-
     void PrintValue(bool v, std::ostream& out) {
         if (v)
         {
@@ -645,7 +661,6 @@ namespace json {
         {
             return n1.AsString() == n1.AsString();
         }
-
 
         return false;
 

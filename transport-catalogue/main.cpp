@@ -17,9 +17,11 @@ int main() {
    
    JsonReader jreader;
    jreader.JsonIn(catalogue, file);
-
- //  MapRenderer maprend;
- //  maprend.SetTs(catalogue);
+  
+//   MapRenderer maprend = jreader.GetMapData();
+  // maprend.SetTransportCatalogue(catalogue);
+  //maprend.CreateSvg(std::cout);
+   //maprend.C
   // maprend.GetStatFromJson(jreader.data_request_);
 
 

@@ -21,7 +21,7 @@ namespace json
 		ValueContext EndArray();
 		Node Build();
 		~Builder();
-	
+	    
 		//flags
 		bool key_active = false;
 		bool array_active = false;
@@ -47,12 +47,7 @@ namespace json
 			KeyContext Key(std::string key);
 			DictValueContext StartDict();
 			ArrayValueContext StartArray();
-			ValueContext EndDict(); // у BaseContext не определен метод Value(), 
-			// если его определить, то не получиться ограничить вызов Value() 
-			//согласно словарю или массиву(требования для dict и arr взаимоисключены и метод по возвращаемому типу не переопределяется), 
-			//потому что у него будет общий интерфейс без ограничений.
-			//Я могу отказаться от наследования BaseContext в классах где нужен свой Value(),
-			//но это будет дублирование кода.
+			ValueContext EndDict(); 
 			ValueContext EndArray();
 			Node Build();
 			
