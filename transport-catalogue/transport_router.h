@@ -9,19 +9,44 @@
 
 const int MINUT_IN_HOUR = 60;
 
+struct RouterSet 
+{
+	double wait_time_ = 0;
+	double bus_velocity_ = 0;
+};
+
 class TransportRouter
 {
 public:
 	TransportRouter() = default;
-	void SetupWaitTime(size_t wait_time)
+	void SetupRouterSettings(RouterSet set)
 	{
-		wait_time_ = wait_time;
+		set_ = set;
+	}
+	void CreateRouter(transport_catalogue::processing::TransportCatalogue& ts)
+	{
+		size_t id = 0;
+		for (auto& stop : ts.GetStopNames())
+		{
+			stopname_id_data_[stop] = id;
+			id++;
+		}
+		ConstructGraph(ts);
+		CreateRouterIdentity();
+	}
+	const graph::DirectedWeightedGraph<double>& GetGraph() 
+	const {
+		return graph_;
 	}
 
-	void SetupVelocity(double bus_velocity) 
+	std::optional<graph::Router<double>::RouteInfo> FindRoute(std::string from, std::string to)
 	{
-		bus_velocity_ = bus_velocity/ MINUT_IN_HOUR;
+		return router_->BuildRoute(stopname_id_data_[from], stopname_id_data_[to]);
 	}
+private:
+	void CreateWaitEdges(graph::DirectedWeightedGraph<double>& graph);
+
+	void CreateBusEdges(graph::DirectedWeightedGraph<double>& graph, transport_catalogue::processing::TransportCatalogue& ts);
 
 	void ConstructGraph(transport_catalogue::processing::TransportCatalogue& ts);
 
@@ -29,19 +54,13 @@ public:
 	{
 		router_.reset(new graph::Router<double>(std::move(graph::Router<double>(graph_))));	
 	}
-
-	std::optional<graph::Router<double>::RouteInfo> BuildRoute(size_t from, size_t to)
-	{
-		return router_->BuildRoute(from, to);
-	}
 	
 	std::unordered_map<std::string, size_t> stopname_id_data_;
 	graph::DirectedWeightedGraph<double> graph_;
 	std::unique_ptr<graph::Router<double>> router_;
 
 private:
-	double wait_time_ = 0;
-	double bus_velocity_ = 0;
+	RouterSet set_;
 	
 };
 
