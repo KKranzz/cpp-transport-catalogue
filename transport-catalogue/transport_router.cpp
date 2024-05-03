@@ -27,7 +27,7 @@ void TransportRouter::CreateBusEdges(graph::DirectedWeightedGraph<double>& graph
 
 				for (int i = count; static_cast<size_t>(i) < bus.stops_.size(); ++i)// a b c b a    a b a c // b a b c / 
 				{
-					prev_distance += static_cast<double>(ts.FindDist(const_cast<domain::Stop*>(bus.stops_.at(i - 1)), const_cast<domain::Stop*>(bus.stops_.at(i)))) / 1000.0;
+					prev_distance += static_cast<double>(ts.FindDist(const_cast<domain::Stop*>(bus.stops_.at(i - 1)), const_cast<domain::Stop*>(bus.stops_.at(i)))) / METERS_IN_KM;
 					graph::Edge<double> edge;
 					edge.from = stopname_id_data_[stop->name_] + stopname_id_data_.size();
 					edge.to = stopname_id_data_[bus.stops_.at(i)->name_];
@@ -52,7 +52,7 @@ void TransportRouter::CreateBusEdges(graph::DirectedWeightedGraph<double>& graph
 				for (int i = count; static_cast<size_t>(i) < bus.stops_.size() / 2 + 1; ++i) //a b 
 				{
 
-					prev_distance += static_cast<double>(ts.FindDist(const_cast<domain::Stop*>(bus.stops_.at(i - 1)), const_cast<domain::Stop*>(bus.stops_.at(i)))) / 1000.0;
+					prev_distance += static_cast<double>(ts.FindDist(const_cast<domain::Stop*>(bus.stops_.at(i - 1)), const_cast<domain::Stop*>(bus.stops_.at(i)))) / METERS_IN_KM;
 					graph::Edge<double> edge;
 					edge.from = stopname_id_data_[stop->name_] + stopname_id_data_.size();
 					edge.to = stopname_id_data_[bus.stops_.at(i)->name_];
@@ -75,7 +75,7 @@ void TransportRouter::CreateBusEdges(graph::DirectedWeightedGraph<double>& graph
 				auto stop = bus.stops_.at(j);
 				for (int i = bus.stops_.size() / 2 + count; static_cast<size_t>(i) < bus.stops_.size(); ++i) //a b c b a
 				{
-					prev_distance += static_cast<double>(ts.FindDist(const_cast<domain::Stop*>(bus.stops_.at(i - 1)), const_cast<domain::Stop*>(bus.stops_.at(i)))) / 1000.0;
+					prev_distance += static_cast<double>(ts.FindDist(const_cast<domain::Stop*>(bus.stops_.at(i - 1)), const_cast<domain::Stop*>(bus.stops_.at(i)))) / METERS_IN_KM;
 					graph::Edge<double> edge;
 					edge.from = stopname_id_data_[stop->name_] + stopname_id_data_.size();
 					edge.to = stopname_id_data_[bus.stops_.at(i)->name_];
@@ -106,4 +106,17 @@ void TransportRouter::ConstructGraph(transport_catalogue::processing::TransportC
 
 	graph_ = std::move(graph);
 	
+}
+
+
+void TransportRouter::BuildRouter(transport_catalogue::processing::TransportCatalogue& ts)
+{
+	size_t id = 0;
+	for (auto& stop : ts.GetStopNames())
+	{
+		stopname_id_data_[stop] = id;
+		id++;
+	}
+	ConstructGraph(ts);
+	CreateRouterIdentity();
 }

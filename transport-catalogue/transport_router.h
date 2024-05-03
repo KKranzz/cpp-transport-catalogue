@@ -7,9 +7,10 @@
 #include "domain.h"
 #include "router.h"
 
-const int MINUT_IN_HOUR = 60;
+const int MINUTES_IN_HOUR = 60;
+const double METERS_IN_KM = 1000.0;
 
-struct RouterSet 
+struct RouterSettings 
 {
 	double wait_time_ = 0;
 	double bus_velocity_ = 0;
@@ -19,25 +20,19 @@ class TransportRouter
 {
 public:
 	TransportRouter() = default;
-	void SetupRouterSettings(RouterSet set)
+
+	const graph::Edge<double>& GetEdge(graph::EdgeId id)
+		const {
+		return graph_.GetEdge(id);
+	}
+
+	void SetupRouterSettings(const RouterSettings& set)
 	{
 		set_ = set;
+		set_.bus_velocity_ /= MINUTES_IN_HOUR;
 	}
-	void CreateRouter(transport_catalogue::processing::TransportCatalogue& ts)
-	{
-		size_t id = 0;
-		for (auto& stop : ts.GetStopNames())
-		{
-			stopname_id_data_[stop] = id;
-			id++;
-		}
-		ConstructGraph(ts);
-		CreateRouterIdentity();
-	}
-	const graph::DirectedWeightedGraph<double>& GetGraph() 
-	const {
-		return graph_;
-	}
+	void BuildRouter(transport_catalogue::processing::TransportCatalogue& ts);
+	
 
 	std::optional<graph::Router<double>::RouteInfo> FindRoute(std::string from, std::string to)
 	{
@@ -59,8 +54,7 @@ private:
 	graph::DirectedWeightedGraph<double> graph_;
 	std::unique_ptr<graph::Router<double>> router_;
 
-private:
-	RouterSet set_;
+	RouterSettings set_;
 	
 };
 

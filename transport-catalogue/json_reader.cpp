@@ -92,12 +92,12 @@ void JsonReader::JsonIn(transport_catalogue::processing::TransportCatalogue& tra
 
 		if (!router_setings->empty()) 
 		{
-			tr_.SetupRouterSettings(RouterSet(router_setings->at("bus_velocity").AsDouble() , router_setings->at("bus_wait_time").AsInt()));
+			tr_.SetupRouterSettings(RouterSettings(router_setings->at("bus_velocity").AsDouble() , router_setings->at("bus_wait_time").AsInt()));
 		}
 
 		
 
-		tr_.CreateRouter(transport_catalogue);
+		tr_.BuildRouter(transport_catalogue);
 	}
 	
 }
@@ -193,7 +193,7 @@ void JsonReader::JsonOut(transport_catalogue::processing::TransportCatalogue& tr
 
 				  for (auto& edge_ : res.value().edges)
 				  {
-					  auto edge_in = tr_.GetGraph().GetEdge(edge_);
+					  auto edge_in = tr_.GetEdge(edge_);
 					  builder_.StartDict();
 					  if (edge_in.state == graph::StatusEdge::WAIT) {
 						  builder_.Key("type").Value("Wait");
